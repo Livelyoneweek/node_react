@@ -3,9 +3,9 @@ const app = express()
 const port = 3000
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-
 const config = require('./config/key');
 
+const {auth} = require("./middleware/auth")
 const {User} = require("./models/User");
 
 // application/x-www-form-urlencoded 으로 온거 분석
@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 })
 
 
-app.post('/register', (req, res) => {
+app.post('/api/user/register', (req, res) => {
     //회원 가입 정보
     const user = new User(req.body)
     user.save()
@@ -41,7 +41,7 @@ app.post('/register', (req, res) => {
     });
 })
 
-app.post('/login',(req, res) =>{
+app.post('/api/user/login',(req, res) =>{
   // 요청된 이메일을 데이터베이스 찾기
   User.findOne({email: req.body.email})
   .then(docs=>{
@@ -66,6 +66,31 @@ app.post('/login',(req, res) =>{
   .catch((err)=>{
       return res.status(400).send(err);
   })
+})
+
+
+app.get('/api/user/auth',auth, (req,res) => {
+  //auth 미들웨어 통과 후 
+  res.status(200).json({
+    _id: req.user._id,
+    isAdmin: req.user.role===0 ? false: true,
+    isAuth: true,
+    email: req.user.email,
+    lastname: req.user.lastname,
+    role: req.user.role,
+    image: req.user.image
+  })
+})
+
+app.get('/api/user/logout',auth,(req,res) => {
+  User.findOneAndUpdate({_id:req.user._id},
+    {token:""}
+    ,(err,user) => {
+      if(err) return res.json({success:false, err});
+      return res.status(200).send({
+        success:true
+      })
+    })
 })
 
 
