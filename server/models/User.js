@@ -58,6 +58,20 @@ userSchema.methods.generateToken = async function (cb) {
   }
 }
 
+userSchema.statics.findByToken = function(token, cb) {
+  let user =this;
+
+  //토큰을 decode
+  jwt.verify(token, 'secretToken', function(err,decoded) {
+
+    //유저 id로 찾은 후 토큰비교
+    user.findOne({"_id":decoded, "token": token}, function(err,user) {
+      if(err) return cb(err);
+      cb(null, user)
+    }) 
+    
+  }
+)}
 
 
 userSchema.pre('save', function(next) {
